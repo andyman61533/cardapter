@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cardapter — Atari 2600 on the Commodore 64</title>
+<meta name="description" content="Cardapter: playing real Atari 2600 cartridges on a Commodore 64 / Ultimate 64 — a 6510 emulator, a cartridge-port reader, enclosures and a VIC-20 board.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f6f4ee; --paper:#fffdf8; --ink:#1d1f24; --muted:#5d6270; --rule:#d9d4c7;
+    --c64:#40318d; --c64-light:#7869c4; --atari:#c4501e; --ok:#2f7a4a; --warn:#a8640a; --bad:#a3262a;
+    --mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+    --sans:'IBM Plex Sans',system-ui,-apple-system,Segoe UI,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 var(--sans)}
+  a{color:var(--c64)}
+  code{font:0.88em var(--mono);background:#ece8dc;padding:1px 5px;border-radius:3px}
+  .wrap{max-width:1040px;margin:0 auto;padding:0 24px}
+
+  /* header */
+  header.hero{background:var(--c64);color:#e9e6ff;padding:56px 0 44px;position:relative;overflow:hidden}
+  header.hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:10px;
+    background:linear-gradient(90deg,var(--atari) 0 25%,#d98b1f 25% 50%,#e3c23c 50% 75%,#6aa84f 75%)}
+  .refno{font:600 12px var(--mono);letter-spacing:.08em;color:#b9b2f0;text-transform:uppercase}
+  header.hero h1{font:700 clamp(40px,7vw,72px)/1 var(--mono);margin:12px 0 10px;color:#fff;letter-spacing:-.02em}
+  header.hero h1 span{color:#a9a0ff}
+  .tagline{font-size:20px;max-width:720px;margin:0;color:#dcd8ff}
+  .hero-meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+  .pill{font:600 12px var(--mono);padding:5px 10px;border:1px solid #7f74d0;border-radius:999px;color:#e9e6ff}
+
+  nav.toc{position:sticky;top:0;z-index:5;background:rgba(246,244,238,.95);backdrop-filter:blur(6px);border-bottom:1px solid var(--rule)}
+  nav.toc .wrap{display:flex;gap:18px;overflow-x:auto;padding-top:12px;padding-bottom:12px}
+  nav.toc a{font:600 13px var(--mono);text-decoration:none;color:var(--muted);white-space:nowrap}
+  nav.toc a:hover{color:var(--c64)}
+
+  section{padding:56px 0 8px}
+  h2{font:700 30px/1.15 var(--sans);margin:0 0 6px;letter-spacing:-.01em}
+  h2 .num{font:600 14px var(--mono);color:var(--atari);display:block;margin-bottom:6px}
+  h3{font:600 19px var(--sans);margin:30px 0 8px}
+  .lede{font-size:18px;color:var(--muted);max-width:760px;margin:0 0 22px}
+  p{max-width:780px}
+
+  .grid{display:grid;gap:16px}
+  .g2{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+  .g3{grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+  .g4{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+  .card{background:var(--paper);border:1px solid var(--rule);border-radius:8px;padding:18px 20px}
+  .card h4{margin:0 0 6px;font:600 16px var(--sans)}
+  .card p{margin:0;color:var(--muted);font-size:15px}
+  .stat{background:var(--paper);border:1px solid var(--rule);border-radius:8px;padding:16px 18px}
+  .stat b{display:block;font:700 28px var(--mono);color:var(--c64)}
+  .stat span{font-size:14px;color:var(--muted)}
+
+  .status{display:inline-block;font:600 11px var(--mono);text-transform:uppercase;letter-spacing:.06em;padding:2px 8px;border-radius:4px;vertical-align:2px}
+  .s-ok{background:#dcefe2;color:var(--ok)} .s-wip{background:#f8ead3;color:var(--warn)} .s-hold{background:#f5dcdc;color:var(--bad)} .s-plan{background:#e4e1f7;color:var(--c64)}
+
+  table{width:100%;border-collapse:collapse;background:var(--paper);border:1px solid var(--rule);border-radius:8px;overflow:hidden;font-size:15px}
+  th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--rule);vertical-align:top}
+  th{font:600 12px var(--mono);text-transform:uppercase;letter-spacing:.05em;color:var(--muted);background:#f1ede2}
+  tr:last-child td{border-bottom:0}
+  td.mono{font-family:var(--mono);font-size:13px;white-space:nowrap}
+
+  .timeline{border-left:3px solid var(--c64-light);margin:18px 0 0 6px;padding-left:22px}
+  .tl{position:relative;margin:0 0 18px}
+  .tl::before{content:"";position:absolute;left:-30px;top:6px;width:13px;height:13px;border-radius:50%;background:var(--paper);border:3px solid var(--c64)}
+  .tl .v{font:600 13px var(--mono);color:var(--c64)}
+  .tl p{margin:2px 0 0;font-size:15px}
+
+  .callout{border-left:4px solid var(--atari);background:#fbefe6;padding:14px 18px;border-radius:0 8px 8px 0;margin:20px 0;max-width:820px}
+  .callout.bad{border-color:var(--bad);background:#f9e5e5}
+  ul.tight{margin:6px 0 0;padding-left:20px} ul.tight li{margin:3px 0}
+
+  .diagram{background:var(--paper);border:1px solid var(--rule);border-radius:8px;padding:18px;margin:18px 0}
+  .diagram svg{width:100%;height:auto;display:block}
+
+  .memmap{font:13px var(--mono);display:grid;grid-template-columns:110px 1fr;border:1px solid var(--rule);border-radius:8px;overflow:hidden;background:var(--paper)}
+  .memmap div{padding:7px 12px;border-bottom:1px solid var(--rule)}
+  .memmap div:nth-child(odd){background:#f1ede2;color:var(--c64);font-weight:600}
+  .memmap div:nth-last-child(-n+2){border-bottom:0}
+
+  footer{margin-top:64px;padding:28px 0 40px;border-top:1px solid var(--rule);color:var(--muted);font-size:14px}
+  footer .refno{color:var(--muted)}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="refno">Ref CDP-WEB-001-R1 · Project page · Nov 2026</div>
+    <h1>CARD<span>APTER</span></h1>
+    <p class="tagline">Playing real Atari 2600 games on a Commodore 64. It started as a 1983 adapter that was advertised but never shipped; this project finally builds it.</p>
+    <div class="hero-meta">
+      <span class="pill">6510 assembly</span>
+      <span class="pill">C64 · Ultimate 64</span>
+      <span class="pill">Cartridge-port hardware</span>
+      <span class="pill">3D-printed enclosures</span>
+      <span class="pill">VIC-20 variant</span>
+    </div>
+  </div>
+</header>
+
+<nav class="toc"><div class="wrap">
+  <a href="#story">The story</a>
+  <a href="#overview">Overview</a>
+  <a href="#emulator">Emulator</a>
+  <a href="#reader">C64 reader</a>
+  <a href="#enclosure">Enclosure</a>
+  <a href="#protocase">Proto rig case</a>
+  <a href="#vic20">VIC-20 board</a>
+  <a href="#roadmap">Roadmap</a>
+  <a href="#lessons">Lessons</a>
+</div></nav>
+
+<main class="wrap">
+
+<!-- STORY -->
+<section id="story">
+  <h2><span class="num">00</span>The 1983 adapter that never shipped</h2>
+  <p class="lede">In 1983, the original "Cardapter 1" was advertised as a way to plug Atari 2600 cartridges into a Commodore 64. It never reached customers.</p>
+  <p>The adapter was associated with Protecto, Cardco and Computer Works of Phoenix. Protecto listed it at $99, with a sale price of $89, and ads ran in <em>Commodore Power Play</em> (Spring 1983) and <em>The Torpet</em>. Then it disappeared and became one of the better-known pieces of Commodore vaporware.</p>
+  <p>This project builds what those ads promised. You put a real Atari 2600 cartridge into a box on the C64's expansion port, and the game plays on the Commodore. The Commodore handles video, sound and joysticks itself. On the C64 build there is no Atari chip anywhere in the signal path.</p>
+</section>
+
+<!-- OVERVIEW -->
+<section id="overview">
+  <h2><span class="num">01</span>Project at a glance</h2>
+  <p class="lede">The project has four parts: an emulator, a hardware reader, an enclosure, and a separate VIC-20 board.</p>
+  <div class="grid g4">
+    <div class="stat"><b>11–16 KB</b><span>Emulator size in 6510 assembly (NTSC build is 16,102 bytes)</span></div>
+    <div class="stat"><b>10+</b><span>Cartridge bank-switching formats in the handoff protocol</span></div>
+    <div class="stat"><b>1,019</b><span>Cartridge titles in the compatibility sweep collection</span></div>
+    <div class="stat"><b>v40</b><span>Revisions of the REU-style enclosure so far, each one test-printed</span></div>
+  </div>
+
+  <div class="diagram" aria-label="System block diagram">
+    <svg viewBox="0 0 960 230" xmlns="http://www.w3.org/2000/svg" font-family="IBM Plex Sans, sans-serif">
+      <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="#5d6270"/></marker></defs>
+      <rect x="10" y="70" width="170" height="90" rx="8" fill="#fbefe6" stroke="#c4501e" stroke-width="2"/>
+      <text x="95" y="108" text-anchor="middle" font-weight="600" font-size="16" fill="#1d1f24">Atari 2600</text>
+      <text x="95" y="130" text-anchor="middle" font-size="14" fill="#5d6270">cartridge</text>
+      <rect x="250" y="55" width="210" height="120" rx="8" fill="#fffdf8" stroke="#40318d" stroke-width="2"/>
+      <text x="355" y="95" text-anchor="middle" font-weight="600" font-size="16" fill="#1d1f24">Cardapter reader</text>
+      <text x="355" y="118" text-anchor="middle" font-size="13" fill="#5d6270">2600 slot → C64 cart port</text>
+      <text x="355" y="138" text-anchor="middle" font-size="13" fill="#5d6270">rear pass-through (REU)</text>
+      <text x="355" y="158" text-anchor="middle" font-size="13" fill="#5d6270">per-cart hint ROM (planned)</text>
+      <rect x="530" y="40" width="200" height="150" rx="8" fill="#40318d"/>
+      <text x="630" y="82" text-anchor="middle" font-weight="600" font-size="16" fill="#fff">C64 / Ultimate 64</text>
+      <text x="630" y="108" text-anchor="middle" font-size="13" fill="#dcd8ff">6510 emulator / translator</text>
+      <text x="630" y="128" text-anchor="middle" font-size="13" fill="#dcd8ff">ROM at $5000–$8FFF</text>
+      <text x="630" y="148" text-anchor="middle" font-size="13" fill="#dcd8ff">VIC-II bitmap 160×192</text>
+      <text x="630" y="168" text-anchor="middle" font-size="13" fill="#dcd8ff">SID audio · CIA joystick</text>
+      <rect x="800" y="70" width="150" height="90" rx="8" fill="#fffdf8" stroke="#2f7a4a" stroke-width="2"/>
+      <text x="875" y="108" text-anchor="middle" font-weight="600" font-size="16" fill="#1d1f24">TV + joystick</text>
+      <text x="875" y="130" text-anchor="middle" font-size="13" fill="#5d6270">the game plays</text>
+      <line x1="182" y1="115" x2="246" y2="115" stroke="#5d6270" stroke-width="2" marker-end="url(#ar)"/>
+      <line x1="462" y1="115" x2="526" y2="115" stroke="#5d6270" stroke-width="2" marker-end="url(#ar)"/>
+      <line x1="732" y1="115" x2="796" y2="115" stroke="#5d6270" stroke-width="2" marker-end="url(#ar)"/>
+      <text x="214" y="105" text-anchor="middle" font-size="11" fill="#5d6270">ROM</text>
+      <text x="494" y="105" text-anchor="middle" font-size="11" fill="#5d6270">dump</text>
+    </svg>
+  </div>
+
+  <table>
+    <tr><th>Workstream</th><th>Status</th><th>Summary</th></tr>
+    <tr><td><a href="#emulator">6510 emulator</a></td><td><span class="status s-ok">Playable</span></td><td>Games run on real hardware. All regression suites pass. The ROM compatibility sweep is in progress.</td></tr>
+    <tr><td><a href="#emulator">Native translator</a></td><td><span class="status s-wip">Started</span></td><td>Converts 2600 code to native 6510 for full speed. Being developed in its own test folder.</td></tr>
+    <tr><td><a href="#reader">C64 cartridge reader</a></td><td><span class="status s-ok">Prototype built</span></td><td>Hand-soldered on a TexElec protoboard with a salvaged Atari 2600 connector. Two earlier PCB revisions exist.</td></tr>
+    <tr><td><a href="#enclosure">REU-style enclosure</a></td><td><span class="status s-wip">v40</span></td><td>Made from reshaped Commodore 1750 REU shells. The PCB sandwich retention design has not been test-printed yet.</td></tr>
+    <tr><td><a href="#protocase">Prototype-rig case</a></td><td><span class="status s-wip">v0.9.18</span></td><td>A case for the bench rig that holds the protoboard and the Atari connector.</td></tr>
+    <tr><td><a href="#vic20">VIC-20 board</a></td><td><span class="status s-hold">Rev 2.1 planned</span></td><td>Uses socketed real Atari chips. The Rev 2 Gerbers must not be fabricated.</td></tr>
+  </table>
+</section>
+
+<!-- EMULATOR -->
+<section id="emulator">
+  <h2><span class="num">02</span>The emulator: an Atari 2600 written in 6510 assembly</h2>
+  <p class="lede">This is the core of the project. It emulates the Atari 6507 CPU, TIA video/sound chip and RIOT timer on the C64's own 6510, in hand-written ACME assembly, with Python tools to verify it.</p>
+
+  <div class="grid g2">
+    <div class="card">
+      <h4>Architecture</h4>
+      <ul class="tight">
+        <li>The 2600 playfield and sprites draw into a C64 multicolour bitmap (160×192 at <code>$2000</code>).</li>
+        <li>Cartridge data sits at <code>$5000–$8FFF</code>, which is four 4K bank slots.</li>
+        <li>A <code>$C000</code> trampoline disables interrupts, banks RAM in at <code>$A000–$BFFF</code> and jumps to the real start. Control passes one way and does not return.</li>
+        <li>NTSC and PAL are separate builds. PAL uses a 128-entry TIA colour table checked against community palette data.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Cart handoff protocol</h4>
+      <ul class="tight">
+        <li><code>$4FFF</code> holds the mapper / bank-count marker: <code>1–4</code> for plain 4K banks, <code>6</code> FE, <code>7</code> WD, <code>8</code> E0 (Parker Bros), <code>9</code> 3F, <code>10</code> E7, <code>12</code> E7-16K.</li>
+        <li><code>$4FFE</code> belongs to the emulator. External tools must never write it.</li>
+        <li>2K carts are mirrored to 4K in slot 0 before handoff.</li>
+        <li><code>$4FF8–$4FFD</code> is an optional diagnostic header: a CRC32, the slot count and the magic byte <code>$CA</code>.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Memory map</h3>
+  <div class="memmap">
+    <div>$2000</div><div>Multicolour bitmap, 160×192, used as the 2600 display</div>
+    <div>$4FF8–$4FFF</div><div>Handoff header: CRC32, slots, magic, region, mapper marker</div>
+    <div>$5000–$8FFF</div><div>Cartridge ROM, four 4K bank slots</div>
+    <div>$9100–$CFE4</div><div>Emulator code (current NTSC build, 16,102 bytes)</div>
+    <div>$A000–$BFFF</div><div>RAM banked in by the trampoline</div>
+    <div>$C000</div><div>Entry trampoline (SEI → bank switch → jump)</div>
+  </div>
+
+  <h3>Test infrastructure</h3>
+  <table>
+    <tr><th>Suite</th><th>Result</th><th>What it covers</th></tr>
+    <tr><td class="mono">batch_endtoend</td><td><span class="status s-ok">7 / 7</span></td><td>Full boot-to-gameplay runs</td></tr>
+    <tr><td class="mono">hwtest</td><td><span class="status s-ok">38 / 38</span></td><td>Hardware register behaviour</td></tr>
+    <tr><td class="mono">midlinetest</td><td><span class="status s-ok">60 / 60</span></td><td>Register writes in the middle of a scanline</td></tr>
+    <tr><td class="mono">rastertest</td><td><span class="status s-ok">24 / 24</span></td><td>Raster timing and positioning</td></tr>
+  </table>
+  <p>Supporting tools are a Python reference simulator (<code>refsim.py</code>), a trace harness (<code>canonical_harness.py</code>), <code>pc_trace_diff.py</code>, a lock-step TIA sweep and a PAL scanner. The emulator is also tested headless in VICE x64sc, with Stella as an independent 2600 reference, and over the network on a real Ultimate 64.</p>
+
+  <h3>Confirmed playable on real hardware</h3>
+  <p>Moon Patrol · Galaxian · Barnstorming · Bugs Bunny · Phoenix · Pitfall! · Mario Bros. · BurgerTime · Springer · and more. Console switches are mapped to F1 (Reset), F3 (Select), F5 (TV Type) and F7 / Shift+F7 (Difficulty).</p>
+
+  <h3>Notable bugs found and fixed</h3>
+  <div class="grid g3">
+    <div class="card"><h4>RIOT timer</h4><p>A root-cause fix that cleared the remaining known pixel failures in one change.</p></div>
+    <div class="card"><h4>BurgerTime (E7)</h4><p>Two bugs: a stale cart marker, and <code>AND #$05</code> where <code>AND #$0F</code> was needed, which caused silent wrong-bank reads.</p></div>
+    <div class="card"><h4>Springer (3F)</h4><p>A bounds check ran after the address had already been masked, so the check could never fail. Fixed by saving the unmasked address first.</p></div>
+    <div class="card"><h4>Raster IRQ cost</h4><p>The raster interrupt was using about 79% of CPU cycles. It was cut down to free time for emulation.</p></div>
+    <div class="card"><h4>Joystick dead</h4><p>The CIA1 port A data-direction register had never been configured.</p></div>
+    <div class="card"><h4>Visual glitches</h4><p>Ms. Pac-Man top clipping, Centipede stale collision masks, a missing Keystone Kapers RESBL flush, and COLUBK tearing.</p></div>
+  </div>
+</section>
+
+<!-- READER -->
+<section id="reader">
+  <h2><span class="num">03</span>The C64 cartridge reader</h2>
+  <p class="lede">This is the hardware half. An Atari 2600 cartridge plugs into it, and it plugs into the C64 or Ultimate 64 expansion port so the C64 can read the cartridge ROM.</p>
+  <div class="grid g2">
+    <div class="card">
+      <h4>Current prototype <span class="status s-ok">Built</span></h4>
+      <p>Hand-soldered on a TexElec <em>Commodore 64/128 Cartridge Port Prototype Card v1.0</em>, with a salvaged real Atari 2600 cartridge connector. The card's onboard EEPROM, reset and DIP switches are disabled for this reader-only build. The board is L-shaped, about 100×100 mm with a 39×30 mm notch, and has two M3 mounting holes at the back corners.</p>
+    </div>
+    <div class="card">
+      <h4>PCB revisions</h4>
+      <p>Rev 1.1 and Rev 3.0 were designed in April–May 2026 and have scripted builds and Gerbers. Work since then has concentrated on the enclosure and the emulator.</p>
+    </div>
+  </div>
+  <h3>Design decisions for the final card (Nov 2026)</h3>
+  <ul class="tight">
+    <li><b>Rear pass-through cartridge connector</b>, so an REU can plug in behind the Cardapter.</li>
+    <li><b>No RAM on the card.</b> The REU version is mainly a demo, so the card stays simple.</li>
+    <li><b>Per-cart hint table</b> for the translator, stored either on a ROM chip on the card or on the d64 disk with the ROM files.</li>
+  </ul>
+</section>
+
+<!-- ENCLOSURE -->
+<section id="enclosure">
+  <h2><span class="num">04</span>The enclosure: a Commodore 1750 REU shell, reshaped</h2>
+  <p class="lede">The reader should look like it came from Commodore. Instead of modelling a case from scratch, the project reshapes real Commodore 1750 REU shell meshes into a case that fits the Cardapter board.</p>
+  <p>An early parametric OpenSCAD version went through connector integration, a sloped wedge shape and a raised logo, and was then dropped. The current approach edits the real REU top and bottom shell STLs with Python, <code>trimesh</code> and <code>manifold3d</code>. OpenSCAD's CGAL engine can't process these meshes, so OpenSCAD is only used for preview renders.</p>
+
+  <div class="timeline">
+    <div class="tl"><div class="v">v1 – v9 · Fit the board</div><p>Stretched the body to 140×130 mm while keeping the real 68×34 mm REU tongue. Corrected the board to its real L-shape and cut an insertion tunnel at the C64 port's measured height. Added a PCB-clearance cutter after collision checks found real interferences.</p></div>
+    <div class="tl"><div class="v">v10 – v16 · Print-driven fixes</div><p>Spliced in a seam bridge and added ear-mount holes. Found real through-holes with multi-direction ray casting after a print showed a defect the render had missed.</p></div>
+    <div class="tl"><div class="v">v17 – v31 · The seam saga</div><p>Patched the tongue/body seam over many rounds for wall thickness, floating bridges and stale cutters. Moved the corner posts off the PCB and gave them friction-fit pegs. Added four PCB support feet that clear the floor ribbing.</p></div>
+    <div class="tl"><div class="v">v27 · Pegs that actually fit</div><p>The original peg design was an interference fit that FDM printing couldn't assemble. It was changed to a 0.3 mm radial clearance fit (peg r 2.1 / socket r 2.4), and that is still the working value. This version also introduced the assembled-fit check: a boolean intersection of both shells together.</p></div>
+    <div class="tl"><div class="v">v32 – v33 · Redesign</div><p>Removed the bottom shell's tongue and front wall entirely instead of patching the seam again. Added a floor patch for the card-edge strip and rebuilt a front wall that matches the back wall.</p></div>
+    <div class="tl"><div class="v">v34 – v37 · One lip all the way round</div><p>Grid scans showed the top collar's height changes across the wall's thickness. The bottom lip is now a uniform 15.8 mm all the way around. Closed a 3.7 mm hidden gap at the top shell's seam and a front-face hole next to the left pillar.</p></div>
+    <div class="tl"><div class="v">v38 – v39 · Trim and interlock</div><p>Trimmed both tongues flush with the card-edge fingers and moved the front feet out from under them. Added three interlocking ridges so the two halves register to each other.</p></div>
+    <div class="tl"><div class="v">v40 · PCB sandwich <span class="status s-wip">awaiting print</span></div><p>Enlarged the board pins to 2.6 mm and added support shoulders. Added top-shell bosses and tongue posts that come down to 0.1 mm above the PCB, so the board is held without being crushed. The design follows enclosure-retention guidance against fully rigid clamps.</p></div>
+  </div>
+  <div class="callout"><b>Open item:</b> the real card-edge finger depth still needs to be measured to confirm where the front support feet should sit.</div>
+</section>
+
+<!-- PROTO CASE -->
+<section id="protocase">
+  <h2><span class="num">05</span>The prototyping rig case</h2>
+  <p class="lede">This is a separate two-piece case for the TexElec protoboard. It turns the board into a bench rig: a real Atari 2600 cartridge plugs in on top and is hand-wired through the 2×22 header, so the adapter logic can be tested before a PCB is ordered.</p>
+  <div class="timeline">
+    <div class="tl"><div class="v">v0.1 – v0.7 · Open tray + frame</div><p>Built an L-shaped tray from Andy's own measurements of the board. Sized the tongue to a stock C64 cartridge shell (68.8 mm), moved the pegs into the corners, and added a friction-fit alignment lip with 0.1 mm clearance.</p></div>
+    <div class="tl"><div class="v">v0.8 – v0.9.2 · Atari connector on top</div><p>Mounted the real 2600 connector on the lid and fused it flush into the roof. Tried a sloped profile.</p></div>
+    <div class="tl"><div class="v">v0.9.3 – v0.9.12 · Two boxes, like the 1750</div><p>Dropped the slope, added a raised CARDAPTER logo, and gave the box sharp corners. Measured the real 1750 mesh to get the tongue height, the 4 mm edge rounding and the position of the rear ridge band.</p></div>
+    <div class="tl"><div class="v">v0.9.13 – v0.9.18 · Centred in the slot</div><p>Raised the PCB so it sits centred in the C64's double-sided slot (19.5 mm tongue, mid-plane at 9.75 mm). Opened the tongue to match the REU's four-window roof with edge rails, and moved the Atari connector to the back.</p></div>
+  </div>
+</section>
+
+<!-- VIC20 -->
+<section id="vic20">
+  <h2><span class="num">06</span>The VIC-20 board</h2>
+  <p class="lede">This is a different approach. The VIC-20 can't do the work the C64 does, so this board carries real Atari chips that generate the game themselves.</p>
+  <div class="grid g2">
+    <div class="card">
+      <h4>Topology</h4>
+      <p>120×122 mm, 2-layer FR4 with ENIG finish. It has socketed real TIA (C010444), RIOT (6532) and 6507 chips, composite video from a 2N3904 resistor mixer, and audio from an LM386. A separate "Cart Tap" board (90×30 mm, gold fingers) brings audio-in, the RAM selects and ground over a 5-pin JST-XH.</p>
+    </div>
+    <div class="card">
+      <h4>Status <span class="status s-hold">Rev 2.1 planned</span></h4>
+      <p>Rev 2.1 will reroute from the netlist using vias and the bottom copper layer. A verifier script must pass before any submission ZIP is produced, and 31 netlist conflicts need sign-off against the datasheets.</p>
+    </div>
+  </div>
+  <div class="callout bad"><b>Do not fabricate the Rev 2 Gerbers.</b> They contain hard copper shorts: 101 of 108 DIP pins are fused into one net, and 60 traces cut through pad rows.</div>
+</section>
+
+<!-- ROADMAP -->
+<section id="roadmap">
+  <h2><span class="num">07</span>Roadmap</h2>
+  <p class="lede">The top priority is running every cartridge at full speed. The end goal is reading the ROM from the real cartridge.</p>
+  <table>
+    <tr><th>#</th><th>Release</th><th>Target</th><th>Priority</th></tr>
+    <tr><td class="mono">1</td><td>Translated, with per-cart hint table</td><td>Full speed. The table goes on the d64, and later on a ROM chip on the Cardapter.</td><td><span class="status s-plan">Top</span></td></tr>
+    <tr><td class="mono">2</td><td>Interpreter (current emulator)</td><td>Works now but runs below full speed. Can use the Ultimate 64's turbo mode.</td><td><span class="status s-ok">Exists</span></td></tr>
+    <tr><td class="mono">3</td><td>Translated from the ROM alone</td><td>Carts that aren't in the hint table.</td><td><span class="status s-plan">Planned</span></td></tr>
+    <tr><td class="mono">4</td><td>Stock 1 MHz C64</td><td>Shows that it plays on an unmodified C64.</td><td><span class="status s-plan">Planned</span></td></tr>
+    <tr><td class="mono">5</td><td>Stock C64 + REU</td><td>Demo version, using the rear pass-through.</td><td><span class="status s-plan">Lowest</span></td></tr>
+  </table>
+  <p>Next work in progress: finishing the 1,019-title ROM sweep, the BurgerTime stall at 0 frames, re-running the TIA lock-step sweep on Race, Video Chess and Stargate, the Stronghold (CommaVid) mapper, and PAL timing. Non-game carts (CompuMate, Supercharger, diagnostic carts) are out of scope.</p>
+</section>
+
+<!-- LESSONS -->
+<section id="lessons">
+  <h2><span class="num">08</span>Lessons learned</h2>
+  <div class="grid g2">
+    <div class="card"><h4>Real hardware decides</h4><p>Several changes passed every simulator test and then failed on a real C64, and two blue-screened it. Simulation is weakest around CIA ports, bus timing and anything cycle-sensitive.</p></div>
+    <div class="card"><h4>A print photo beats a render</h4><p>Every time a physical test print and a CAD check disagreed, the print was right. A watertight mesh can still fail to print.</p></div>
+    <div class="card"><h4>Validate the tools first</h4><p>Bugs were found in the reference simulator (16-bit instead of 13-bit addressing), the trace harness and the trace differ (it never compared TIA timing). Check the test helpers before trusting their results.</p></div>
+    <div class="card"><h4>Patch past the true edge</h4><p>Many enclosure bugs came from fills that stopped just inside a wall's real edge, or from reusing a neighbouring feature's dimensions. Measure each spot where it actually is.</p></div>
+    <div class="card"><h4>Check the assembly, not just the parts</h4><p>Real interference between the two shells only showed up when both were intersected together. That check now runs on every version.</p></div>
+    <div class="card"><h4>Retract wrong findings openly</h4><p>When a conclusion turns out wrong, say so explicitly. Don't quietly revise it.</p></div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="refno">CDP-WEB-001-R1</div>
+    <p>Cardapter is an independent hobby project by Andy Schwartz. Commodore, Atari and the other product names belong to their respective owners. This project is not affiliated with them.</p>
+  </div>
+</footer>
+</body>
+</html>
